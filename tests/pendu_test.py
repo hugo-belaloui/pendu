@@ -6,10 +6,10 @@ element = random.choice(words)
 hide = ["_"] * len(element)
 score = 0
 
-def attempt():
-    attempt = 7
-    while attempt > 0 and "_" in hide:
-        print(f"Guess the word: {" ".join(hide)}")
+def play():
+    attempts = 7
+    while attempts > 0 and "_" in hide:
+        print(f"Guess the word: {' '.join(hide)}")
         guess = input("Choose a letter: ").lower()
 
         if guess in element:
@@ -17,21 +17,24 @@ def attempt():
                 if element[i] == guess:
                     hide[i] = guess
         else:
-            attempt -= 1
-            if attempt > 1:
-                print(f"{guess} is not in the word. You have {attempt} tries left.\n")
-            elif attempt == 1:
-                print(f"{guess} is not in the word. You have {attempt} last try.\n")
+            attempts -= 1
+            if attempts > 1:
+                print(f"{guess} is not in the word. You have {attempts} tries left.\n")
+            elif attempts == 1:
+                print(f"{guess} is not in the word. You have {attempts} last try.\n")
 
-def winning_condition() :
+def winning_condition():
+    global score
     if "_" not in hide:
-        print("You won")
-        print(f"The word was: {element} " )
-        score +=1
+        print("You won!")
+        print(f"The word was: {element}")
+        score += 1
     else:
-        print("You lost")
-        print(f"The word was: {element} ")
+        print("You lost.")
+        print(f"The word was: {element}")
 
 
-with open("score.txt", "a") as folder:
-    folder.write(f"{score}\n")
+play()
+winning_condition()
+
+
