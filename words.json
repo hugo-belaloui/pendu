@@ -1,0 +1,19 @@
+{
+  "easy": [
+    "chat", "chien", "maison", "lune", "soleil",
+    "pain", "eau", "fleur", "table", "livre",
+    "porte", "pomme", "route", "arbre", "train"
+  ],
+  "medium": [
+    "triangle", "voiture", "mafia", "bureau", "chaise",
+    "montagne", "ordinateur", "fromage", "jardin", "fenetre",
+    "village", "telephone", "musique", "horloge", "ecole"
+  ],
+  "hard": [
+    "xylophone", "hippopotame", "psychologie", "pharmacie",
+    "anticonstitutionnel", "chlorophylle", "encyclopedie",
+    "quadrilatere", "catastrophique", "thermodynamique",
+    "electromagnetisme", "infrastructure", "metamorphose",
+    "subconscient", "incomprehensible"
+  ]
+}
