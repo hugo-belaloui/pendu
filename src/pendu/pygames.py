@@ -3,6 +3,13 @@ import random
 import json
 from pathlib import Path
 import time
+import sys
+ROOT = Path(__file__).resolve().parents[2]   # <--- ici
+sys.path.append(str(ROOT))
+
+from src.pendu import score
+from src.pendu import random_word
+from src.pendu import pendu
 
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
@@ -38,108 +45,38 @@ last_blink = time.time()
 etat = "menu"
 difficulte = None
 fin_jeu = False
+score_ajoute = False   # ✅ FLAG IMPORTANT
 
 # ===== JSON =====
 words_file = Path(__file__).resolve().parent / "words.json"
 score_file = Path(__file__).resolve().parent / "score.json"
 
-def load_words():
-    with open(words_file, "r", encoding="utf-8") as f:
-        return json.load(f)
+random_word.load_words()
 
-def get_random_word(diff):
-    words = load_words()
-    return random.choice(words[diff])
+random_word.get_random_word()
 
-def load_score():
-    if not score_file.exists():
-        return {"scores": []}
-    with open(score_file, "r", encoding="utf-8") as f:
-        return json.load(f)
 
-def save_score(data):
-    with open(score_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+score.load_score()
 
-def add_score(name):
-    data = load_score()
-    for player in data["scores"]:
-        if player["name"] == name:
-            player["score"] += 1
-            save_score(data)
-            return
-    data["scores"].append({"name": name, "score": 1})
-    save_score(data)
+score.save_score()
 
-# ===== PENDU =====
-mot = ""
-lettres_trouvees = []
-lettres_utilisees = []
-erreurs = 0
-erreurs_max = 10
 
-def new_game(diff):
-    global mot, lettres_trouvees, lettres_utilisees, erreurs, fin_jeu
-    mot = get_random_word(diff)
-    lettres_trouvees = []
-    lettres_utilisees = []
-    erreurs = 0
-    fin_jeu = False
+score.add_score()
 
-def dessiner_pendu(erreurs):
-    if erreurs >= 1:
-        pygame.draw.line(screen, white, (150, 450), (300, 450), 4)
-    if erreurs >= 2:
-        pygame.draw.line(screen, white, (225, 450), (225, 150), 4)
-    if erreurs >= 3:
-        pygame.draw.line(screen, white, (225, 150), (350, 150), 4)
-    if erreurs >= 4:
-        pygame.draw.line(screen, white, (350, 150), (350, 180), 4)
-    if erreurs >= 5:
-        pygame.draw.circle(screen, white, (350, 210), 30, 3)
-    if erreurs >= 6:
-        pygame.draw.line(screen, white, (350, 240), (350, 330), 3)
-    if erreurs >= 7:
-        pygame.draw.line(screen, white, (350, 260), (310, 300), 3)
-    if erreurs >= 8:
-        pygame.draw.line(screen, white, (350, 260), (390, 300), 3)
-    if erreurs >= 9:
-        pygame.draw.line(screen, white, (350, 330), (310, 390), 3)
-    if erreurs >= 10:
-        pygame.draw.line(screen, white, (350, 330), (390, 390), 3)
 
-def dessiner_mot():
-    x = 220
-    y = 470
-    for lettre in mot:
-        pygame.draw.rect(screen, white, (x, y, 40, 50), 2)
-        if lettre in lettres_trouvees:
-            txt = font.render(lettre.upper(), True, white)
-            screen.blit(txt, (x + 10, y + 10))
-        x += 50
 
-def afficher_lettres_utilisees():
-    x_start, y_start = 450, 10
-    largeur, hauteur = 330, 90
+pendu.new_game()
 
-    pygame.draw.rect(screen, black, (x_start, y_start, largeur, hauteur))
-    pygame.draw.rect(screen, white, (x_start, y_start, largeur, hauteur), 2)
+pendu.draw_hangman()
 
-    x, y = x_start + 10, y_start + 10
-    for lettre in lettres_utilisees:
-        txt = font.render(lettre.upper(), True, white)
-        if x + txt.get_width() > x_start + largeur - 10:
-            x = x_start + 10
-            y += 30
-        screen.blit(txt, (x, y))
-        x += txt.get_width() + 10
 
-# ===== BOUCLE =====
+pendu.draw_word()
+
+pendu.show_used_words()
+
+# ===== BOUCLE PRINCIPALE =====
 running = True
 while running:
-    mouse_pos = pygame.mouse.get_pos()
-    cursor = pygame.SYSTEM_CURSOR_ARROW
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -160,7 +97,7 @@ while running:
                     difficulte = "hard"
 
                 if difficulte:
-                    new_game(difficulte)
+                    pendu.new_game(difficulte)
                     etat = "pendu"
 
             elif etat == "pendu" and fin_jeu:
@@ -178,24 +115,20 @@ while running:
 
             elif etat == "pendu" and not fin_jeu:
                 lettre = event.unicode.lower()
-                if lettre.isalpha() and lettre not in lettres_trouvees and lettre not in lettres_utilisees:
-                    if lettre in mot:
-                        lettres_trouvees.append(lettre)
+                if lettre.isalpha() and lettre not in pendu.lettres_trouvees and lettre not in pendu.lettres_utilisees:
+                    if lettre in pendu.mot:
+                        pendu.lettres_trouvees.append(lettre)
                     else:
                         erreurs += 1
-                        lettres_utilisees.append(lettre)
+                        pendu.lettres_utilisees.append(lettre)
 
     # ===== AFFICHAGE =====
-    screen.fill((0, 0, 0))
+    screen.fill(black)
 
     if etat == "menu":
         pygame.draw.rect(screen, white, input_rect, 2)
         txt = font.render(nom if nom else "Entrez un nom", True, white if nom else grey)
         screen.blit(txt, (input_rect.x + 5, input_rect.y + 10))
-
-        if active_input and cursor_visible:
-            x = input_rect.x + 5 + font.size(nom)[0]
-            pygame.draw.line(screen, white, (x, input_rect.y + 10), (x, input_rect.y + 40), 2)
 
         pygame.draw.rect(screen, red if nom else grey, bouton_jouer, border_radius=20)
         screen.blit(font.render("JOUER", True, white), (bouton_jouer.x + 60, bouton_jouer.y + 25))
@@ -210,17 +143,21 @@ while running:
         screen.blit(font.render("DIFFICILE", True, white), (325, 425))
 
     elif etat == "pendu":
-        dessiner_pendu(erreurs)
-        dessiner_mot()
-        afficher_lettres_utilisees()
+        pendu.draw_hangman(erreurs)
+        pendu.draw_word()
+        pendu.show_used_words()
 
-        if erreurs >= erreurs_max:
+        if pendu.erreurs >= pendu.erreurs_max:
             fin_jeu = True
             screen.blit(font.render(f"{nom} TU AS PERDU", True, red), (330, 550))
-        elif all(l in lettres_trouvees for l in mot):
+
+        elif all(l in pendu.lettres_trouvees for l in pendu.mot):
             fin_jeu = True
             screen.blit(font.render(f"BRAVO {nom} TU AS GAGNÉ", True, green), (330, 550))
-            add_score(nom)  # <= ajout du score ici
+
+            if not score_ajoute:   
+                score.add_score(nom)
+                score_ajoute = True
 
         if fin_jeu:
             pygame.draw.rect(screen, red, bouton_retour, border_radius=15)

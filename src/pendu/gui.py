@@ -1,12 +1,25 @@
-import pygame
-import random
-import json
 from pathlib import Path
+import sys
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from src.pendu import attempt_difficulty
+from src.pendu import winning_condition
+from src.pendu import score
+
+import pygame
 import time
+import random
 
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("Pendu")
+
+# ===== IMAGES =====
+# background = pygame.image.load("image/background.png")
+# background = pygame.transform.scale(background, (800, 600))
+
+# background_jeu = pygame.image.load("image/background2.png")
+# background_jeu = pygame.transform.scale(background_jeu, (800, 600))
 
 # ===== COULEURS =====
 white = (255, 255, 255)
@@ -39,53 +52,20 @@ etat = "menu"
 difficulte = None
 fin_jeu = False
 
-# ===== JSON =====
-words_file = Path(__file__).resolve().parent / "words.json"
-score_file = Path(__file__).resolve().parent / "score.json"
-
-def load_words():
-    with open(words_file, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def get_random_word(diff):
-    words = load_words()
-    return random.choice(words[diff])
-
-def load_score():
-    if not score_file.exists():
-        return {"scores": []}
-    with open(score_file, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def save_score(data):
-    with open(score_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-def add_score(name):
-    data = load_score()
-    for player in data["scores"]:
-        if player["name"] == name:
-            player["score"] += 1
-            save_score(data)
-            return
-    data["scores"].append({"name": name, "score": 1})
-    save_score(data)
-
 # ===== PENDU =====
+mots = {
+    "facile": ["chat", "soleil", "kayak"],
+    "moyen": ["ordinateur", "chocolat", "voiture"],
+    "difficile": ["saxophone", "rhinocero", "assidue"]
+}
+
 mot = ""
 lettres_trouvees = []
 lettres_utilisees = []
 erreurs = 0
 erreurs_max = 10
 
-def new_game(diff):
-    global mot, lettres_trouvees, lettres_utilisees, erreurs, fin_jeu
-    mot = get_random_word(diff)
-    lettres_trouvees = []
-    lettres_utilisees = []
-    erreurs = 0
-    fin_jeu = False
-
+# ===== FONCTIONS =====
 def dessiner_pendu(erreurs):
     if erreurs >= 1:
         pygame.draw.line(screen, white, (150, 450), (300, 450), 4)
@@ -108,7 +88,7 @@ def dessiner_pendu(erreurs):
     if erreurs >= 10:
         pygame.draw.line(screen, white, (350, 330), (390, 390), 3)
 
-def dessiner_mot():
+def dessiner_mot(mot, lettres_trouvees):
     x = 220
     y = 470
     for lettre in mot:
@@ -134,7 +114,7 @@ def afficher_lettres_utilisees():
         screen.blit(txt, (x, y))
         x += txt.get_width() + 10
 
-# ===== BOUCLE =====
+# ===== BOUCLE PRINCIPALE =====
 running = True
 while running:
     mouse_pos = pygame.mouse.get_pos()
@@ -151,16 +131,22 @@ while running:
                 if bouton_jouer.collidepoint(event.pos) and nom.strip():
                     etat = "difficulte"
 
+
+####
             elif etat == "difficulte":
                 if facile_btn.collidepoint(event.pos):
-                    difficulte = "easy"
+                    difficulte = "facile"
                 elif moyen_btn.collidepoint(event.pos):
-                    difficulte = "medium"
+                    difficulte = "moyen"
                 elif difficile_btn.collidepoint(event.pos):
-                    difficulte = "hard"
+                    difficulte = "difficile"
 
                 if difficulte:
-                    new_game(difficulte)
+                    mot = random.choice(mots[difficulte])
+                    lettres_trouvees = []
+                    lettres_utilisees = []
+                    erreurs = 0
+                    fin_jeu = False
                     etat = "pendu"
 
             elif etat == "pendu" and fin_jeu:
@@ -185,12 +171,28 @@ while running:
                         erreurs += 1
                         lettres_utilisees.append(lettre)
 
+    # ===== CURSEUR CLIGNOTANT =====
+    if time.time() - last_blink > 0.5:
+        cursor_visible = not cursor_visible
+        last_blink = time.time()
+
+    # ===== CURSEUR MAIN =====
+    if etat == "menu" and bouton_jouer.collidepoint(mouse_pos):
+        cursor = pygame.SYSTEM_CURSOR_HAND
+    if etat == "difficulte" and (facile_btn.collidepoint(mouse_pos) or moyen_btn.collidepoint(mouse_pos) or difficile_btn.collidepoint(mouse_pos)):
+        cursor = pygame.SYSTEM_CURSOR_HAND
+    if etat == "pendu" and fin_jeu and bouton_retour.collidepoint(mouse_pos):
+        cursor = pygame.SYSTEM_CURSOR_HAND
+
+    pygame.mouse.set_cursor(cursor)
+
     # ===== AFFICHAGE =====
     screen.fill((0, 0, 0))
 
     if etat == "menu":
+        # screen.blit(background, (0, 0))
         pygame.draw.rect(screen, white, input_rect, 2)
-        txt = font.render(nom if nom else "Entrez un nom", True, white if nom else grey)
+        txt = font.render(nom if nom else "Entrez un pseudo", True, white if nom else grey)
         screen.blit(txt, (input_rect.x + 5, input_rect.y + 10))
 
         if active_input and cursor_visible:
@@ -201,6 +203,7 @@ while running:
         screen.blit(font.render("JOUER", True, white), (bouton_jouer.x + 60, bouton_jouer.y + 25))
 
     elif etat == "difficulte":
+        # screen.blit(background, (0, 0))
         pygame.draw.rect(screen, green, facile_btn, border_radius=15)
         pygame.draw.rect(screen, orange, moyen_btn, border_radius=15)
         pygame.draw.rect(screen, red, difficile_btn, border_radius=15)
@@ -210,8 +213,9 @@ while running:
         screen.blit(font.render("DIFFICILE", True, white), (325, 425))
 
     elif etat == "pendu":
+        # screen.blit(background_jeu, (0, 0))
         dessiner_pendu(erreurs)
-        dessiner_mot()
+        dessiner_mot(mot, lettres_trouvees)
         afficher_lettres_utilisees()
 
         if erreurs >= erreurs_max:
@@ -220,11 +224,13 @@ while running:
         elif all(l in lettres_trouvees for l in mot):
             fin_jeu = True
             screen.blit(font.render(f"BRAVO {nom} TU AS GAGNÉ", True, green), (330, 550))
-            add_score(nom)  # <= ajout du score ici
 
         if fin_jeu:
             pygame.draw.rect(screen, red, bouton_retour, border_radius=15)
             screen.blit(font.render("RETOUR MENU", True, white), (590, 540))
+
+            if all(l in lettres_trouvees for l in mot):
+                score.ajouter_score(nom, 1)
 
     pygame.display.flip()
 
