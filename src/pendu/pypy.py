@@ -185,6 +185,21 @@ while running:
                         erreurs += 1
                         lettres_utilisees.append(lettre)
 
+    # ===== CURSEUR CLIGNOTANT =====
+    if time.time() - last_blink > 0.5:
+        cursor_visible = not cursor_visible
+        last_blink = time.time()
+
+    # ===== CURSEUR MAIN =====
+    if etat == "menu" and bouton_jouer.collidepoint(mouse_pos):
+        cursor = pygame.SYSTEM_CURSOR_HAND
+    if etat == "difficulte" and (facile_btn.collidepoint(mouse_pos) or moyen_btn.collidepoint(mouse_pos) or difficile_btn.collidepoint(mouse_pos)):
+        cursor = pygame.SYSTEM_CURSOR_HAND
+    if etat == "pendu" and fin_jeu and bouton_retour.collidepoint(mouse_pos):
+        cursor = pygame.SYSTEM_CURSOR_HAND
+
+    pygame.mouse.set_cursor(cursor)
+
     # ===== AFFICHAGE =====
     screen.fill((0, 0, 0))
 
