@@ -210,10 +210,10 @@ while running:
 
         if erreurs >= erreurs_max:
             fin_jeu = True
-            screen.blit(font.render(f"{nom} TU AS PERDU", True, red), (330, 550))
+            screen.blit(font.render(f"{nom} TU AS PERDU", True, red), (290, 550))
         elif all(l in lettres_trouvees for l in mot):
             fin_jeu = True
-            screen.blit(font.render(f"BRAVO {nom} TU AS GAGNÉ", True, green), (330, 550))
+            screen.blit(font.render(f"BRAVO {nom} TU AS GAGNÉ", True, green), (200, 550))
 
         if fin_jeu:
             pygame.draw.rect(screen, red, bouton_retour, border_radius=15)
@@ -222,3 +222,4 @@ while running:
     pygame.display.flip()
 
 pygame.quit()
+
