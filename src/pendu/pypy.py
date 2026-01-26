@@ -8,6 +8,13 @@ pygame.init()
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("Pendu")
 
+# ===== IMAGES =====
+background = pygame.image.load("image/background.png")
+background = pygame.transform.scale(background, (800, 600))
+
+background_jeu = pygame.image.load("image/background2.png")
+background_jeu = pygame.transform.scale(background_jeu, (800, 600))
+
 # ===== COULEURS =====
 white = (255, 255, 255)
 grey = (150, 150, 150)
@@ -38,6 +45,8 @@ last_blink = time.time()
 etat = "menu"
 difficulte = None
 fin_jeu = False
+
+added_score = False
 
 # ===== JSON =====
 words_file = Path(__file__).resolve().parent / "words.json"
@@ -85,6 +94,7 @@ def new_game(diff):
     lettres_utilisees = []
     erreurs = 0
     fin_jeu = False
+    added_score = False
 
 def dessiner_pendu(erreurs):
     if erreurs >= 1:
@@ -204,6 +214,7 @@ while running:
     screen.fill((0, 0, 0))
 
     if etat == "menu":
+        screen.blit(background, (0, 0))
         pygame.draw.rect(screen, white, input_rect, 2)
         txt = font.render(nom if nom else "Entrez un nom", True, white if nom else grey)
         screen.blit(txt, (input_rect.x + 5, input_rect.y + 10))
@@ -231,11 +242,13 @@ while running:
 
         if erreurs >= erreurs_max:
             fin_jeu = True
-            screen.blit(font.render(f"{nom} TU AS PERDU", True, red), (330, 550))
+            screen.blit(font.render(f"{nom}, tu as perdu", True, red), (200, 550))
         elif all(l in lettres_trouvees for l in mot):
             fin_jeu = True
-            screen.blit(font.render(f"BRAVO {nom} TU AS GAGNÉ", True, green), (330, 550))
-            add_score(nom)  # <= ajout du score ici
+            screen.blit(font.render(f"bravo {nom} tu as gagné", True, green), (200, 550))
+            if not added_score :
+                add_score(nom)  # <= ajout du score 
+                added_score = True
 
         if fin_jeu:
             pygame.draw.rect(screen, red, bouton_retour, border_radius=15)
