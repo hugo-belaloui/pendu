@@ -61,14 +61,14 @@ def save_score(data):
     with open(score_file, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-def add_score(name):
+def add_score(nom):
     data = load_score()
     for player in data["scores"]:
-        if player["name"] == name:
+        if player["nom"] == nom:
             player["score"] += 1
             save_score(data)
             return
-    data["scores"].append({"name": name, "score": 1})
+    data["scores"].append({"nom": nom, "score": 1})
     save_score(data)
 
 # ===== PENDU =====
